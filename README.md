@@ -7,6 +7,7 @@
  |_____/ \__\__,_|\__\___| |_|  |_|\__,_|\___|_| |_|_|_| |_|\___|
 ```
 
+[![Build](https://github.com/Tianea2160/statemachine/actions/workflows/build.yml/badge.svg)](https://github.com/Tianea2160/statemachine/actions/workflows/build.yml)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white)
 ![JVM](https://img.shields.io/badge/JVM-24-007396?logo=openjdk&logoColor=white)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue)
