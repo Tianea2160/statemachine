@@ -8,6 +8,7 @@
 ```
 
 [![Build](https://github.com/Tianea2160/statemachine/actions/workflows/build.yml/badge.svg)](https://github.com/Tianea2160/statemachine/actions/workflows/build.yml)
+[![JitPack](https://jitpack.io/v/Tianea2160/statemachine.svg)](https://jitpack.io/#Tianea2160/statemachine)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white)
 ![JVM](https://img.shields.io/badge/JVM-24-007396?logo=openjdk&logoColor=white)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue)
@@ -37,17 +38,30 @@ The library embraces Kotlin's language features to deliver an expressive API whe
 
 ### Gradle
 
+Add JitPack repository to your `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
+
+Add the dependency to your `build.gradle.kts`:
+
 ```kotlin
 dependencies {
-    implementation("org.project.hansan:statemachine:1.0.0")
+    implementation("com.github.Tianea2160:statemachine:v1.0.0")
 }
 ```
 
 ### Basic Usage
 
 ```kotlin
-import org.project.hansan.statemachine.core.*
-import org.project.hansan.statemachine.dsl.stateMachine
+import com.github.tianea2160.statemachine.core.*
+import com.github.tianea2160.statemachine.dsl.stateMachine
 
 // Define states
 enum class DocumentStatus : State {

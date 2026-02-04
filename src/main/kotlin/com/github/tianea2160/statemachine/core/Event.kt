@@ -1,4 +1,4 @@
-package org.project.hansan.statemachine.core
+package com.github.tianea2160.statemachine.core
 
 /**
  * 상태 전이를 트리거하는 이벤트 마커 인터페이스.

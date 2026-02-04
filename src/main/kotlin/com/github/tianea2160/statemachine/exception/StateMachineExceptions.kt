@@ -1,7 +1,7 @@
-package org.project.hansan.statemachine.exception
+package com.github.tianea2160.statemachine.exception
 
-import org.project.hansan.statemachine.core.Event
-import org.project.hansan.statemachine.core.State
+import com.github.tianea2160.statemachine.core.Event
+import com.github.tianea2160.statemachine.core.State
 
 sealed class StateMachineException(message: String) : RuntimeException(message)
 

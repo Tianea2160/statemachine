@@ -1,4 +1,4 @@
-package org.project.hansan.statemachine.core
+package com.github.tianea2160.statemachine.core
 
 /**
  * 상태 머신의 상태를 나타내는 마커 인터페이스.

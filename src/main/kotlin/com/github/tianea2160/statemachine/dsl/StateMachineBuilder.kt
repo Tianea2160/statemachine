@@ -1,13 +1,13 @@
-package org.project.hansan.statemachine.dsl
+package com.github.tianea2160.statemachine.dsl
 
-import org.project.hansan.statemachine.core.Action
-import org.project.hansan.statemachine.core.DefaultStateMachine
-import org.project.hansan.statemachine.core.Event
-import org.project.hansan.statemachine.core.Guard
-import org.project.hansan.statemachine.core.State
-import org.project.hansan.statemachine.core.StateMachine
-import org.project.hansan.statemachine.core.Stateful
-import org.project.hansan.statemachine.core.Transition
+import com.github.tianea2160.statemachine.core.Action
+import com.github.tianea2160.statemachine.core.DefaultStateMachine
+import com.github.tianea2160.statemachine.core.Event
+import com.github.tianea2160.statemachine.core.Guard
+import com.github.tianea2160.statemachine.core.State
+import com.github.tianea2160.statemachine.core.StateMachine
+import com.github.tianea2160.statemachine.core.Stateful
+import com.github.tianea2160.statemachine.core.Transition
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 

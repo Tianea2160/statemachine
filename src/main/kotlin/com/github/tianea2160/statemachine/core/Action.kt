@@ -1,4 +1,4 @@
-package org.project.hansan.statemachine.core
+package com.github.tianea2160.statemachine.core
 
 /**
  * 전이 시 실행되는 동작 함수형 인터페이스.

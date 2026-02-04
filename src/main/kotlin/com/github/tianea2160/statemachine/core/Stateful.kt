@@ -1,4 +1,4 @@
-package org.project.hansan.statemachine.core
+package com.github.tianea2160.statemachine.core
 
 /**
  * 상태를 가진 모델을 위한 추상화 인터페이스.

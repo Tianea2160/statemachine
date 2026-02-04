@@ -1,4 +1,4 @@
-package org.project.hansan.statemachine.core
+package com.github.tianea2160.statemachine.core
 
 import kotlin.reflect.KClass
 

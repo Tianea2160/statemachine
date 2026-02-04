@@ -1,6 +1,6 @@
-package org.project.hansan.statemachine.core
+package com.github.tianea2160.statemachine.core
 
-import org.project.hansan.statemachine.exception.InvalidTransitionException
+import com.github.tianea2160.statemachine.exception.InvalidTransitionException
 import kotlin.reflect.KClass
 
 /**
