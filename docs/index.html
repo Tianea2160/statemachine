@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>State Machine — Type-Safe DSL for Kotlin</title>
+<meta name="description" content="A type-safe, declarative state machine library for Kotlin with fluent DSL, composable guards, chainable actions, and immutable design.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-deep: #0a0e0d;
+  --bg-surface: #0f1614;
+  --bg-elevated: #141e1b;
+  --bg-card: #182520;
+  --border-dim: #1e2e28;
+  --border-mid: #2a3f37;
+  --border-bright: #3d5a4e;
+  --text-primary: #d4e8df;
+  --text-secondary: #8aaa9a;
+  --text-dim: #5a7a6a;
+  --accent-green: #00e88f;
+  --accent-green-dim: #00c878;
+  --accent-copper: #e8a04e;
+  --accent-copper-dim: #c4803a;
+  --accent-teal: #00c4b4;
+  --accent-red: #ff5a5a;
+  --accent-blue: #4a9eff;
+  --code-bg: #0c1210;
+  --code-keyword: #ff7eb6;
+  --code-string: #78dce8;
+  --code-type: #a9dc76;
+  --code-func: #ffd866;
+  --code-comment: #4a6258;
+  --code-operator: #ff6188;
+  --code-number: #ab9df2;
+  --code-property: #78dce8;
+  --font-display: 'Space Mono', monospace;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-code: 'JetBrains Mono', monospace;
+  --transition-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── GRID BACKGROUND ─── */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--border-dim) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-dim) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.3;
+}
+
+.grid-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, transparent 0%, var(--bg-deep) 70%);
+}
+
+/* ─── NAVIGATION ─── */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(10, 14, 13, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-dim);
+  transition: background 0.3s;
+}
+
+nav .logo {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-green);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+nav .logo .logo-icon {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--accent-green);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--accent-green);
+  position: relative;
+}
+
+nav .logo .logo-icon::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--accent-green);
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.7); }
+}
+
+nav .nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+nav .nav-links a {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: color 0.2s;
+}
+
+nav .nav-links a:hover { color: var(--accent-green); }
+
+nav .github-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--border-mid);
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+nav .github-link:hover {
+  color: var(--text-primary);
+  border-color: var(--border-bright);
+  background: var(--bg-elevated);
+}
+
+/* ─── SECTION BASE ─── */
+section {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.section-label {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--accent-green);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-label::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--accent-green);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.section-desc {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 600px;
+  line-height: 1.8;
+}
+
+/* ─── HERO ─── */
+.hero {
+  padding-top: 10rem;
+  padding-bottom: 6rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.hero-content { animation: fadeSlideUp 0.8s var(--transition-smooth) both; }
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent-copper);
+  background: rgba(232, 160, 78, 0.08);
+  border: 1px solid rgba(232, 160, 78, 0.2);
+  padding: 0.4rem 1rem;
+  border-radius: 100px;
+  margin-bottom: 2rem;
+}
+
+.hero-badge .dot {
+  width: 6px;
+  height: 6px;
+  background: var(--accent-copper);
+  border-radius: 50%;
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.03em;
+}
+
+.hero h1 .highlight {
+  color: var(--accent-green);
+  position: relative;
+}
+
+.hero h1 .highlight::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent-green);
+  opacity: 0.3;
+  border-radius: 2px;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin-bottom: 2.5rem;
+  max-width: 480px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--bg-deep);
+  background: var(--accent-green);
+  padding: 0.8rem 1.8rem;
+  border-radius: 8px;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: var(--accent-green-dim);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px rgba(0, 232, 143, 0.2);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: transparent;
+  padding: 0.8rem 1.8rem;
+  border-radius: 8px;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--border-mid);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-bright);
+  background: var(--bg-elevated);
+}
+
+/* ─── INTERACTIVE STATE DIAGRAM ─── */
+.hero-diagram {
+  animation: fadeSlideUp 0.8s var(--transition-smooth) 0.2s both;
+  position: relative;
+}
+
+.diagram-container {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: 16px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.diagram-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+  opacity: 0.5;
+}
+
+.diagram-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.diagram-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.diagram-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.diagram-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--border-mid);
+}
+
+.diagram-dots span:nth-child(1) { background: var(--accent-red); border-color: var(--accent-red); }
+.diagram-dots span:nth-child(2) { background: var(--accent-copper); border-color: var(--accent-copper); }
+.diagram-dots span:nth-child(3) { background: var(--accent-green); border-color: var(--accent-green); }
+
+.diagram-title {
+  font-family: var(--font-code);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-left: 1rem;
+}
+
+.diagram-hint {
+  font-family: var(--font-code);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  animation: blink-hint 2s ease-in-out infinite;
+}
+
+@keyframes blink-hint {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.state-diagram {
+  width: 100%;
+  height: 300px;
+  position: relative;
+}
+
+.state-diagram svg {
+  width: 100%;
+  height: 100%;
+}
+
+.state-node {
+  cursor: pointer;
+  transition: all 0.3s var(--transition-smooth);
+}
+
+.state-node rect {
+  rx: 10;
+  ry: 10;
+  stroke-width: 2;
+  transition: all 0.3s var(--transition-smooth);
+}
+
+.state-node.active rect {
+  filter: drop-shadow(0 0 20px rgba(0, 232, 143, 0.4));
+}
+
+.state-node text {
+  font-family: var(--font-code);
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--text-primary);
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.state-node .state-subtitle {
+  font-size: 10px;
+  font-weight: 400;
+  fill: var(--text-dim);
+}
+
+.transition-edge {
+  stroke-width: 2;
+  fill: none;
+  transition: all 0.4s var(--transition-smooth);
+}
+
+.transition-label {
+  font-family: var(--font-code);
+  font-size: 10px;
+  fill: var(--text-dim);
+  text-anchor: middle;
+}
+
+.transition-arrow {
+  transition: all 0.4s var(--transition-smooth);
+}
+
+.diagram-log {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-dim);
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  height: 4.5em;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.diagram-log .log-entry {
+  animation: logSlideIn 0.3s var(--transition-smooth);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+}
+
+.diagram-log .log-entry .log-arrow { color: var(--accent-green); }
+.diagram-log .log-entry .log-state { color: var(--accent-copper); }
+.diagram-log .log-entry .log-event { color: var(--code-keyword); }
+
+@keyframes logSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── FEATURES ─── */
+.features {
+  padding: 8rem 2rem;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 3rem;
+}
+
+.feature-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: 12px;
+  padding: 2rem;
+  transition: all 0.3s var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent-green), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.feature-card:hover {
+  border-color: var(--border-mid);
+  transform: translateY(-2px);
+  background: var(--bg-elevated);
+}
+
+.feature-card:hover::before { opacity: 1; }
+
+.feature-icon {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border-mid);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.2rem;
+  font-size: 1.2rem;
+  background: var(--bg-elevated);
+}
+
+.feature-card h3 {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.6rem;
+}
+
+.feature-card p {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* ─── CODE EXAMPLES ─── */
+.code-section {
+  padding: 8rem 2rem;
+}
+
+.code-tabs {
+  margin-top: 3rem;
+}
+
+.code-tab-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-dim);
+  margin-bottom: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.code-tab-nav::-webkit-scrollbar { display: none; }
+
+.code-tab-btn {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.8rem 1.5rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.code-tab-btn:hover { color: var(--text-secondary); }
+
+.code-tab-btn.active {
+  color: var(--accent-green);
+  border-bottom-color: var(--accent-green);
+}
+
+.code-panel {
+  display: none;
+  background: var(--code-bg);
+  border: 1px solid var(--border-dim);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+.code-panel.active { display: block; }
+
+.code-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1.5rem;
+  border-bottom: 1px solid var(--border-dim);
+  background: rgba(15, 22, 20, 0.5);
+}
+
+.code-panel-filename {
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.code-copy-btn {
+  font-family: var(--font-code);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  background: none;
+  border: 1px solid var(--border-dim);
+  border-radius: 4px;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.code-copy-btn:hover {
+  color: var(--text-secondary);
+  border-color: var(--border-mid);
+}
+
+.code-content {
+  padding: 1.5rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-mid) transparent;
+}
+
+.code-content pre {
+  font-family: var(--font-code);
+  font-size: 0.82rem;
+  line-height: 1.8;
+  tab-size: 4;
+}
+
+.code-content .ln {
+  display: inline-block;
+  width: 2.5em;
+  text-align: right;
+  color: var(--text-dim);
+  user-select: none;
+  margin-right: 1.5em;
+  opacity: 0.5;
+}
+
+.kw { color: var(--code-keyword); }
+.tp { color: var(--code-type); }
+.fn { color: var(--code-func); }
+.st { color: var(--code-string); }
+.cm { color: var(--code-comment); }
+.op { color: var(--code-operator); }
+.nb { color: var(--code-number); }
+.pr { color: var(--code-property); }
+
+/* ─── INSTALLATION ─── */
+.install-section {
+  padding: 8rem 2rem;
+}
+
+.install-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.install-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.install-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-dim);
+  background: var(--bg-elevated);
+}
+
+.install-card-header .step-num {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent-green);
+  background: rgba(0, 232, 143, 0.1);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.install-card-header h3 {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.install-card .code-content {
+  padding: 1.2rem 1.5rem;
+  background: var(--code-bg);
+}
+
+/* ─── API OVERVIEW ─── */
+.api-section {
+  padding: 8rem 2rem;
+}
+
+.api-table-wrapper {
+  margin-top: 3rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.api-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.api-table thead {
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.api-table th {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  padding: 1rem 1.5rem;
+  text-align: left;
+}
+
+.api-table td {
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--border-dim);
+  vertical-align: top;
+}
+
+.api-table tr:last-child td { border-bottom: none; }
+
+.api-table tr:hover td { background: rgba(0, 232, 143, 0.02); }
+
+.api-table code {
+  font-family: var(--font-code);
+  font-size: 0.8rem;
+  color: var(--accent-teal);
+  background: var(--bg-deep);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-dim);
+}
+
+.api-table .type-badge {
+  font-family: var(--font-code);
+  font-size: 0.68rem;
+  color: var(--accent-copper);
+  background: rgba(232, 160, 78, 0.08);
+  border: 1px solid rgba(232, 160, 78, 0.2);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.api-table .desc { color: var(--text-secondary); }
+
+/* ─── FOOTER ─── */
+footer {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  border-top: 1px solid var(--border-dim);
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.footer-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.footer-logo {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-green);
+}
+
+.footer-copy {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.footer-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.footer-links a {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover { color: var(--accent-green); }
+
+/* ─── ANIMATIONS ─── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s var(--transition-smooth), transform 0.6s var(--transition-smooth);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+    padding-top: 8rem;
+    gap: 3rem;
+    min-height: auto;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .install-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .api-table-wrapper {
+    overflow-x: auto;
+  }
+
+  nav .nav-links { display: none; }
+}
+
+@media (max-width: 600px) {
+  section, .features, .code-section, .install-section, .api-section {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  nav { padding: 1rem; }
+
+  .hero h1 { font-size: 2rem; }
+
+  .hero-actions { flex-direction: column; }
+
+  .footer-content { flex-direction: column; align-items: flex-start; }
+}
+
+/* ─── MOBILE NAV TOGGLE ─── */
+.nav-toggle {
+  display: none;
+  background: none;
+  border: 1px solid var(--border-mid);
+  border-radius: 6px;
+  padding: 0.4rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 900px) {
+  .nav-toggle { display: flex; }
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-bright); }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- ─── NAVIGATION ─── -->
+<nav>
+  <a href="#" class="logo">
+    <span class="logo-icon"></span>
+    statemachine
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#examples">Examples</a></li>
+    <li><a href="#install">Install</a></li>
+    <li><a href="#api">API</a></li>
+  </ul>
+  <a href="https://github.com/Tianea2160/statemachine" class="github-link" target="_blank" rel="noopener">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    GitHub
+  </a>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero" id="hero">
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      Kotlin / JVM 24
+    </div>
+    <h1>
+      Type-Safe<br>
+      <span class="highlight">State Machine</span><br>
+      for Kotlin
+    </h1>
+    <p class="hero-subtitle">
+      A declarative DSL for defining state transitions with compile-time type checking,
+      composable guards, chainable actions, and full thread-safe immutability.
+    </p>
+    <div class="hero-actions">
+      <a href="#install" class="btn-primary">
+        Get Started
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <a href="https://github.com/Tianea2160/statemachine" class="btn-secondary" target="_blank" rel="noopener">
+        View on GitHub
+      </a>
+    </div>
+  </div>
+
+  <div class="hero-diagram">
+    <div class="diagram-container">
+      <div class="diagram-header">
+        <div class="diagram-header-left">
+          <div class="diagram-dots"><span></span><span></span><span></span></div>
+          <span class="diagram-title">DocumentStateMachine.kt</span>
+        </div>
+        <span class="diagram-hint">click a state to transition</span>
+      </div>
+
+      <div class="state-diagram" id="stateDiagram">
+        <svg viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--accent-green)"/>
+            </marker>
+            <marker id="arrowDim" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--border-bright)" class="transition-arrow"/>
+            </marker>
+            <marker id="arrowActive" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="var(--accent-copper)"/>
+            </marker>
+          </defs>
+
+          <!-- Transition edges -->
+          <!-- DRAFT -> PUBLISHED -->
+          <path id="edge-draft-published" class="transition-edge" d="M 185 100 C 250 60, 310 60, 355 100"
+                stroke="var(--border-mid)" marker-end="url(#arrowDim)"/>
+          <text class="transition-label" x="270" y="62">Publish</text>
+
+          <!-- DRAFT -> ARCHIVED -->
+          <path id="edge-draft-archived" class="transition-edge" d="M 120 135 C 120 200, 160 250, 200 260"
+                stroke="var(--border-mid)" marker-end="url(#arrowDim)"/>
+          <text class="transition-label" x="115" y="210">Archive</text>
+
+          <!-- PUBLISHED -> ARCHIVED -->
+          <path id="edge-published-archived" class="transition-edge" d="M 400 135 C 400 200, 360 250, 310 260"
+                stroke="var(--border-mid)" marker-end="url(#arrowDim)"/>
+          <text class="transition-label" x="400" y="210">Archive</text>
+
+          <!-- State nodes -->
+          <g class="state-node active" id="node-draft" data-state="DRAFT">
+            <rect x="55" y="78" width="130" height="52" fill="var(--bg-card)" stroke="var(--accent-green)"/>
+            <text x="120" y="101">DRAFT</text>
+            <text x="120" y="119" class="state-subtitle">initial state</text>
+          </g>
+
+          <g class="state-node" id="node-published" data-state="PUBLISHED">
+            <rect x="295" y="78" width="150" height="52" fill="var(--bg-card)" stroke="var(--border-mid)"/>
+            <text x="370" y="101">PUBLISHED</text>
+            <text x="370" y="119" class="state-subtitle">content live</text>
+          </g>
+
+          <g class="state-node" id="node-archived" data-state="ARCHIVED">
+            <rect x="185" y="238" width="140" height="52" fill="var(--bg-card)" stroke="var(--border-mid)"/>
+            <text x="255" y="261">ARCHIVED</text>
+            <text x="255" y="279" class="state-subtitle">read-only</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="diagram-log" id="diagramLog">
+        <div class="log-entry">
+          <span class="log-arrow">&gt;</span> Current state: <span class="log-state">DRAFT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FEATURES ─── -->
+<section class="features" id="features">
+  <div class="reveal">
+    <span class="section-label">Core Features</span>
+    <h2 class="section-title">Built for safety,<br>designed for elegance</h2>
+    <p class="section-desc">
+      Every design decision prioritizes compile-time correctness and developer ergonomics.
+    </p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card reveal">
+      <div class="feature-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h3>Type-Safe DSL</h3>
+      <p>Compile-time type checking for states, events, and context. Invalid transitions are caught before runtime.</p>
+    </div>
+
+    <div class="feature-card reveal">
+      <div class="feature-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-copper)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <h3>Guard Conditions</h3>
+      <p>Composable boolean predicates with <code>and</code>, <code>or</code>, <code>not</code> operators for expressive transition rules.</p>
+    </div>
+
+    <div class="feature-card reveal">
+      <div class="feature-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-teal)" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <h3>Chainable Actions</h3>
+      <p>Side effects and context transformations with the <code>then</code> operator for clean, sequential processing.</p>
+    </div>
+
+    <div class="feature-card reveal">
+      <div class="feature-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      </div>
+      <h3>Stateful Interface</h3>
+      <p>Automatic state management through <code>Stateful&lt;S, C&gt;</code> for seamless integration with your domain models.</p>
+    </div>
+
+    <div class="feature-card reveal">
+      <div class="feature-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--code-keyword)" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      </div>
+      <h3>Transition Callbacks</h3>
+      <p>Hook into state changes for logging, event publishing, auditing, or any cross-cutting concerns.</p>
+    </div>
+
+    <div class="feature-card reveal">
+      <div class="feature-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--code-number)" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      </div>
+      <h3>Immutable Design</h3>
+      <p>All transitions produce new context instances. No mutation, no race conditions, full thread safety guaranteed.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── CODE EXAMPLES ─── -->
+<section class="code-section" id="examples">
+  <div class="reveal">
+    <span class="section-label">Code Examples</span>
+    <h2 class="section-title">Expressive, readable,<br>and type-safe</h2>
+    <p class="section-desc">
+      Define complex state machines with a clean Kotlin DSL that reads like a specification.
+    </p>
+  </div>
+
+  <div class="code-tabs reveal">
+    <div class="code-tab-nav">
+      <button class="code-tab-btn active" data-tab="basic">Basic DSL</button>
+      <button class="code-tab-btn" data-tab="guards">Guards & Actions</button>
+      <button class="code-tab-btn" data-tab="compose">Composable Guards</button>
+      <button class="code-tab-btn" data-tab="callbacks">Callbacks</button>
+    </div>
+
+    <div class="code-panel active" id="tab-basic">
+      <div class="code-panel-header">
+        <span class="code-panel-filename">DocumentStateMachine.kt</span>
+        <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <div class="code-content">
+<pre><span class="ln"> 1</span><span class="kw">val</span> machine = <span class="fn">stateMachine</span>&lt;<span class="tp">DocumentStatus</span>, <span class="tp">DocumentEvent</span>, <span class="tp">Document</span>&gt; {
+<span class="ln"> 2</span>    <span class="fn">from</span>(<span class="tp">DocumentStatus</span>.<span class="pr">DRAFT</span>) {
+<span class="ln"> 3</span>        <span class="fn">on</span>&lt;<span class="tp">DocumentEvent.Publish</span>&gt;() <span class="kw">goto</span> <span class="tp">DocumentStatus</span>.<span class="pr">PUBLISHED</span>
+<span class="ln"> 4</span>        <span class="fn">on</span>&lt;<span class="tp">DocumentEvent.Archive</span>&gt;() <span class="kw">goto</span> <span class="tp">DocumentStatus</span>.<span class="pr">ARCHIVED</span>
+<span class="ln"> 5</span>    }
+<span class="ln"> 6</span>    <span class="fn">from</span>(<span class="tp">DocumentStatus</span>.<span class="pr">PUBLISHED</span>) {
+<span class="ln"> 7</span>        <span class="fn">on</span>&lt;<span class="tp">DocumentEvent.Archive</span>&gt;() <span class="kw">goto</span> <span class="tp">DocumentStatus</span>.<span class="pr">ARCHIVED</span>
+<span class="ln"> 8</span>    }
+<span class="ln"> 9</span>}
+<span class="ln">10</span>
+<span class="ln">11</span><span class="kw">val</span> doc = <span class="tp">Document</span>(<span class="tp">DocumentStatus</span>.<span class="pr">DRAFT</span>, <span class="st">"Hello World"</span>)
+<span class="ln">12</span><span class="kw">val</span> result = machine.<span class="fn">fire</span>(doc, <span class="tp">DocumentEvent</span>.<span class="pr">Publish</span>)
+<span class="ln">13</span><span class="cm">// result.newState == DocumentStatus.PUBLISHED</span></pre>
+      </div>
+    </div>
+
+    <div class="code-panel" id="tab-guards">
+      <div class="code-panel-header">
+        <span class="code-panel-filename">GuardedTransitions.kt</span>
+        <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <div class="code-content">
+<pre><span class="ln"> 1</span><span class="kw">val</span> machine = <span class="fn">stateMachine</span>&lt;<span class="tp">DocumentStatus</span>, <span class="tp">DocumentEvent</span>, <span class="tp">Document</span>&gt; {
+<span class="ln"> 2</span>    <span class="fn">from</span>(<span class="tp">DocumentStatus</span>.<span class="pr">DRAFT</span>) {
+<span class="ln"> 3</span>        <span class="fn">on</span>&lt;<span class="tp">DocumentEvent.Publish</span>&gt;() <span class="kw">goto</span> <span class="tp">DocumentStatus</span>.<span class="pr">PUBLISHED</span> <span class="kw">guardedBy</span> {
+<span class="ln"> 4</span>            it.content.<span class="fn">isNotBlank</span>()
+<span class="ln"> 5</span>        } <span class="kw">action</span> { doc, _ <span class="op">-></span>
+<span class="ln"> 6</span>            doc.<span class="fn">copy</span>(<span class="pr">publishedAt</span> = <span class="tp">Instant</span>.<span class="fn">now</span>())
+<span class="ln"> 7</span>        }
+<span class="ln"> 8</span>    }
+<span class="ln"> 9</span>}
+<span class="ln">10</span>
+<span class="ln">11</span><span class="cm">// Guard prevents transition when content is blank</span>
+<span class="ln">12</span><span class="kw">val</span> emptyDoc = <span class="tp">Document</span>(<span class="tp">DocumentStatus</span>.<span class="pr">DRAFT</span>, <span class="st">""</span>)
+<span class="ln">13</span>machine.<span class="fn">canFire</span>(emptyDoc, <span class="tp">DocumentEvent</span>.<span class="pr">Publish</span>) <span class="cm">// false</span></pre>
+      </div>
+    </div>
+
+    <div class="code-panel" id="tab-compose">
+      <div class="code-panel-header">
+        <span class="code-panel-filename">ComposableGuards.kt</span>
+        <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <div class="code-content">
+<pre><span class="ln"> 1</span><span class="cm">// Define reusable guard predicates</span>
+<span class="ln"> 2</span><span class="kw">val</span> notBlank: <span class="tp">Guard</span>&lt;<span class="tp">Document</span>&gt; = <span class="tp">Guard</span> { it.content.<span class="fn">isNotBlank</span>() }
+<span class="ln"> 3</span><span class="kw">val</span> longEnough: <span class="tp">Guard</span>&lt;<span class="tp">Document</span>&gt; = <span class="tp">Guard</span> { it.content.length <span class="op">>=</span> <span class="nb">10</span> }
+<span class="ln"> 4</span>
+<span class="ln"> 5</span><span class="cm">// Compose with boolean operators</span>
+<span class="ln"> 6</span><span class="kw">val</span> publishable = notBlank <span class="kw">and</span> longEnough
+<span class="ln"> 7</span><span class="kw">val</span> archivable  = notBlank <span class="kw">or</span> <span class="tp">Guard</span> { it.state == <span class="tp">DocumentStatus</span>.<span class="pr">PUBLISHED</span> }
+<span class="ln"> 8</span><span class="kw">val</span> notArchived = <span class="op">!</span><span class="tp">Guard</span>&lt;<span class="tp">Document</span>&gt; { it.state == <span class="tp">DocumentStatus</span>.<span class="pr">ARCHIVED</span> }
+<span class="ln"> 9</span>
+<span class="ln">10</span><span class="cm">// Chainable actions with 'then'</span>
+<span class="ln">11</span><span class="kw">val</span> setTimestamp: <span class="tp">Action</span>&lt;<span class="tp">Document</span>, <span class="tp">DocumentEvent</span>&gt; = <span class="tp">Action</span> { doc, _ <span class="op">-></span>
+<span class="ln">12</span>    doc.<span class="fn">copy</span>(<span class="pr">publishedAt</span> = <span class="tp">Instant</span>.<span class="fn">now</span>())
+<span class="ln">13</span>}
+<span class="ln">14</span><span class="kw">val</span> normalize: <span class="tp">Action</span>&lt;<span class="tp">Document</span>, <span class="tp">DocumentEvent</span>&gt; = <span class="tp">Action</span> { doc, _ <span class="op">-></span>
+<span class="ln">15</span>    doc.<span class="fn">copy</span>(<span class="pr">content</span> = doc.content.<span class="fn">trim</span>().<span class="fn">lowercase</span>())
+<span class="ln">16</span>}
+<span class="ln">17</span><span class="kw">val</span> publishAction = setTimestamp <span class="kw">then</span> normalize</pre>
+      </div>
+    </div>
+
+    <div class="code-panel" id="tab-callbacks">
+      <div class="code-panel-header">
+        <span class="code-panel-filename">TransitionCallbacks.kt</span>
+        <button class="code-copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <div class="code-content">
+<pre><span class="ln"> 1</span><span class="kw">val</span> machine = <span class="fn">stateMachine</span>&lt;<span class="tp">DocumentStatus</span>, <span class="tp">DocumentEvent</span>, <span class="tp">Document</span>&gt; {
+<span class="ln"> 2</span>    <span class="fn">from</span>(<span class="tp">DocumentStatus</span>.<span class="pr">DRAFT</span>) {
+<span class="ln"> 3</span>        <span class="fn">on</span>&lt;<span class="tp">DocumentEvent.Publish</span>&gt;() <span class="kw">goto</span> <span class="tp">DocumentStatus</span>.<span class="pr">PUBLISHED</span>
+<span class="ln"> 4</span>        <span class="fn">on</span>&lt;<span class="tp">DocumentEvent.Archive</span>&gt;() <span class="kw">goto</span> <span class="tp">DocumentStatus</span>.<span class="pr">ARCHIVED</span>
+<span class="ln"> 5</span>    }
+<span class="ln"> 6</span>    <span class="fn">from</span>(<span class="tp">DocumentStatus</span>.<span class="pr">PUBLISHED</span>) {
+<span class="ln"> 7</span>        <span class="fn">on</span>&lt;<span class="tp">DocumentEvent.Archive</span>&gt;() <span class="kw">goto</span> <span class="tp">DocumentStatus</span>.<span class="pr">ARCHIVED</span>
+<span class="ln"> 8</span>    }
+<span class="ln"> 9</span>
+<span class="ln">10</span>    <span class="cm">// Hook into every state transition</span>
+<span class="ln">11</span>    <span class="fn">onTransition</span> { from, event, to <span class="op">-></span>
+<span class="ln">12</span>        logger.<span class="fn">info</span>(<span class="st">"Transition: </span><span class="op">$</span>from <span class="st">-> </span><span class="op">$</span>to <span class="st">via </span><span class="op">$</span>event<span class="st">"</span>)
+<span class="ln">13</span>        eventBus.<span class="fn">publish</span>(<span class="tp">StateChanged</span>(from, to))
+<span class="ln">14</span>    }
+<span class="ln">15</span>}</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── INSTALLATION ─── -->
+<section class="install-section" id="install">
+  <div class="reveal">
+    <span class="section-label">Installation</span>
+    <h2 class="section-title">Add to your project<br>in seconds</h2>
+    <p class="section-desc">
+      Available via JitPack. Add the repository and dependency to your Gradle build file.
+    </p>
+  </div>
+
+  <div class="install-grid reveal">
+    <div class="install-card">
+      <div class="install-card-header">
+        <span class="step-num">1</span>
+        <h3>Add JitPack repository</h3>
+      </div>
+      <div class="code-content">
+<pre><span class="cm">// settings.gradle.kts</span>
+<span class="kw">dependencyResolutionManagement</span> {
+    <span class="fn">repositories</span> {
+        <span class="fn">mavenCentral</span>()
+        <span class="fn">maven</span> { url = <span class="fn">uri</span>(<span class="st">"https://jitpack.io"</span>) }
+    }
+}</pre>
+      </div>
+    </div>
+
+    <div class="install-card">
+      <div class="install-card-header">
+        <span class="step-num">2</span>
+        <h3>Add dependency</h3>
+      </div>
+      <div class="code-content">
+<pre><span class="cm">// build.gradle.kts</span>
+<span class="kw">dependencies</span> {
+    <span class="fn">implementation</span>(<span class="st">"com.github.Tianea2160:statemachine:v1.0.0"</span>)
+}</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── API OVERVIEW ─── -->
+<section class="api-section" id="api">
+  <div class="reveal">
+    <span class="section-label">API Reference</span>
+    <h2 class="section-title">Simple, powerful<br>core API</h2>
+    <p class="section-desc">
+      A minimal surface area that covers complex state management needs.
+    </p>
+  </div>
+
+  <div class="api-table-wrapper reveal">
+    <table class="api-table">
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>State</code></td>
+          <td><span class="type-badge">interface</span></td>
+          <td class="desc">Marker interface for state types (typically enum classes)</td>
+        </tr>
+        <tr>
+          <td><code>Event</code></td>
+          <td><span class="type-badge">interface</span></td>
+          <td class="desc">Marker interface for event types (typically sealed interfaces)</td>
+        </tr>
+        <tr>
+          <td><code>Stateful&lt;S, C&gt;</code></td>
+          <td><span class="type-badge">interface</span></td>
+          <td class="desc">Context interface with <code>state</code> property and <code>withState()</code> method</td>
+        </tr>
+        <tr>
+          <td><code>Guard&lt;C&gt;</code></td>
+          <td><span class="type-badge">fun interface</span></td>
+          <td class="desc">Predicate <code>(C) -&gt; Boolean</code> with <code>and</code>, <code>or</code>, <code>not</code> operators</td>
+        </tr>
+        <tr>
+          <td><code>Action&lt;C, E&gt;</code></td>
+          <td><span class="type-badge">fun interface</span></td>
+          <td class="desc">Function <code>(C, E) -&gt; C</code> with chainable <code>then</code> operator</td>
+        </tr>
+        <tr>
+          <td><code>fire(model, event)</code></td>
+          <td><span class="type-badge">method</span></td>
+          <td class="desc">Execute a transition, returns <code>TransitionResult&lt;S, C&gt;</code></td>
+        </tr>
+        <tr>
+          <td><code>canFire(model, event)</code></td>
+          <td><span class="type-badge">method</span></td>
+          <td class="desc">Check if a transition is valid without executing it</td>
+        </tr>
+        <tr>
+          <td><code>availableEvents(model)</code></td>
+          <td><span class="type-badge">method</span></td>
+          <td class="desc">Get all valid events for the current state and context</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="footer-content">
+    <div class="footer-left">
+      <span class="footer-logo">statemachine</span>
+      <span class="footer-copy">Apache 2.0 License &middot; v1.0.0</span>
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/Tianea2160/statemachine" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/Tianea2160/statemachine/issues" target="_blank" rel="noopener">Issues</a>
+      <a href="https://jitpack.io/#Tianea2160/statemachine" target="_blank" rel="noopener">JitPack</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ─── INTERACTIVE STATE DIAGRAM ───
+(function() {
+  const transitions = {
+    DRAFT: {
+      PUBLISHED: 'Publish',
+      ARCHIVED: 'Archive'
+    },
+    PUBLISHED: {
+      ARCHIVED: 'Archive'
+    },
+    ARCHIVED: {}
+  };
+
+  let currentState = 'DRAFT';
+  const logEl = document.getElementById('diagramLog');
+  const maxLogs = 3;
+
+  function addLog(msg) {
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = msg;
+    logEl.appendChild(entry);
+    while (logEl.children.length > maxLogs) {
+      logEl.removeChild(logEl.firstChild);
+    }
+  }
+
+  function setActiveState(state) {
+    document.querySelectorAll('.state-node').forEach(n => {
+      const s = n.dataset.state;
+      const isActive = s === state;
+      n.classList.toggle('active', isActive);
+      const rect = n.querySelector('rect');
+      rect.setAttribute('stroke', isActive ? 'var(--accent-green)' : 'var(--border-mid)');
+    });
+
+    document.querySelectorAll('.transition-edge').forEach(edge => {
+      edge.setAttribute('stroke', 'var(--border-mid)');
+      edge.setAttribute('marker-end', 'url(#arrowDim)');
+    });
+
+    const available = transitions[state] || {};
+    Object.keys(available).forEach(target => {
+      const edgeId = `edge-${state.toLowerCase()}-${target.toLowerCase()}`;
+      const edge = document.getElementById(edgeId);
+      if (edge) {
+        edge.setAttribute('stroke', 'var(--accent-green-dim)');
+        edge.setAttribute('marker-end', 'url(#arrowGreen)');
+      }
+    });
+  }
+
+  document.querySelectorAll('.state-node').forEach(node => {
+    node.addEventListener('click', () => {
+      const targetState = node.dataset.state;
+      if (targetState === currentState) return;
+
+      const available = transitions[currentState] || {};
+      if (available[targetState]) {
+        const event = available[targetState];
+        addLog(
+          `<span class="log-arrow">&gt;</span> ` +
+          `<span class="log-event">${event}</span> : ` +
+          `<span class="log-state">${currentState}</span> ` +
+          `<span class="log-arrow">&rarr;</span> ` +
+          `<span class="log-state">${targetState}</span>`
+        );
+
+        const edgeId = `edge-${currentState.toLowerCase()}-${targetState.toLowerCase()}`;
+        const edge = document.getElementById(edgeId);
+        if (edge) {
+          edge.setAttribute('stroke', 'var(--accent-copper)');
+          edge.setAttribute('marker-end', 'url(#arrowActive)');
+          setTimeout(() => {
+            currentState = targetState;
+            setActiveState(currentState);
+
+            if (Object.keys(transitions[currentState] || {}).length === 0) {
+              addLog(`<span class="log-arrow">&gt;</span> No available transitions. <span class="log-event">Click to reset.</span>`);
+            }
+          }, 400);
+        } else {
+          currentState = targetState;
+          setActiveState(currentState);
+        }
+      } else if (Object.keys(transitions[currentState] || {}).length === 0) {
+        currentState = 'DRAFT';
+        setActiveState(currentState);
+        addLog(`<span class="log-arrow">&gt;</span> Reset to <span class="log-state">DRAFT</span>`);
+      } else {
+        addLog(
+          `<span class="log-arrow">&gt;</span> ` +
+          `<span style="color:var(--accent-red)">Invalid</span>: no transition from ` +
+          `<span class="log-state">${currentState}</span> to ` +
+          `<span class="log-state">${targetState}</span>`
+        );
+      }
+    });
+  });
+
+  setActiveState(currentState);
+})();
+
+// ─── CODE TABS ───
+document.querySelectorAll('.code-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+
+    document.querySelectorAll('.code-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    document.querySelectorAll('.code-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+  });
+});
+
+// ─── COPY CODE ───
+function copyCode(btn) {
+  const codeContent = btn.closest('.code-panel').querySelector('pre');
+  const text = codeContent.textContent.replace(/^\s*\d+\s*/gm, '');
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.color = 'var(--accent-green)';
+    btn.style.borderColor = 'var(--accent-green)';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  });
+}
+
+// ─── SCROLL REVEAL ───
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ─── NAV SCROLL EFFECT ───
+let lastScrollY = 0;
+window.addEventListener('scroll', () => {
+  const nav = document.querySelector('nav');
+  if (window.scrollY > 50) {
+    nav.style.borderBottomColor = 'var(--border-mid)';
+  } else {
+    nav.style.borderBottomColor = 'var(--border-dim)';
+  }
+  lastScrollY = window.scrollY;
+}, { passive: true });
+</script>
+
+</body>
+</html>
